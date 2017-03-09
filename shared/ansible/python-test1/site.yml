@@ -1,0 +1,73 @@
+######################################################################
+#
+# Mark Higginbottom
+#
+# 03/02/2017
+#
+# Playbook to configure an Ubuntui vm with Pyhon and Ansible
+#
+# NOTE: This is not the way to write an Ansible Playbook.
+# It is just a quick and dirty script to get up and running quickly.
+#
+######################################################################
+- name: uPython dev machine
+  hosts: "{{ servers }}"
+  become: Yes
+  become_user: root
+  tasks:
+    - debug: "{{ servers }}"
+    - name: install the latest version of Python and its build dependencies
+      apt: pkg={{item}} state=latest
+      with_items:
+#        - python-pip
+        - git
+        - build-essential
+        - python
+        - python-wheel
+        - python-setuptools
+        - python-crypto
+        - python-dev
+        - python-netifaces
+        - libssl-dev
+        - libffi-dev
+
+    - name: check python version
+      shell: python --version
+      register: shell_output
+    - debug: var=shell_output.stderr
+#    - name: Check for pip install file
+#      stat: path=/home/vagrant/get-pip.py
+#      register: pip
+#    - block:
+#      - name: Fetch pip install file
+#        get_url:
+#          url: https://bootstrap.pypa.io/get-pip.py
+#          dest: /home/vagrant
+#      - name: Install pip
+#        command: python get-pip.py
+
+#      when: pip.stat.exists == False
+#      rescue:
+#      - debug: msg="ERROR - pip dependencies install failed"
+#      - name: remove web dir contents
+#        file: path=/home/vagrant/get-pip.py state=absent
+
+    - block:
+      - name: Easy install pip to get correct dependencies
+        easy_install:
+          name: pip
+          state: latest
+      - name: Install Python module dependencies with pip
+        pip:
+          name: setuptools django virtualenv requests cryptography
+
+# Use share 1.12.1 works with K5. Later version do not  - 06/02/2017.
+      - name: Install Python shade-1.12.1 module with pip
+        pip:
+          name: shade
+          version: 1.12.1
+
+
+      - name: Install OpenStack client with pip
+        pip:
+          name: python-openstackclient
